@@ -41,26 +41,66 @@ const postRent = async (req, res, next) => {
         location,
         price,
         image: uploadedMedia.secure_url,
-        userId,
+        jobPoster:{
+        createdBy:req.user.userId,
+        name:user.name,
+        }
     }
 
     const post = await Post.create(postData);
     res.status(StatusCodes.CREATED).json({ post });
-
-
-
 };
 
 const updatePost = async (req, res, next) => {
-console.log('update post');
+    try {
+        const { id } = req.params;
+        const post = await Post.findById(id);
+        if (!post) {
+          throw new BadRequestError('post not found');
+        }
+    
+        if (post.jobPoster.createdBy.toString() !== req.user.userId) {
+            console.log( post.jobPoster.createdBy);
+            console.log(req.user.userId);
+          throw new UnauthenticatedError('You are not authorized to update this post');
+        }
+    
+        const { title, body, location, price  } = req.body;
+    
+        if (title) {
+            post.title = title;
+        }
+        if (body) {
+            post.body = body;
+        }
+        if (location) {
+            post.location = location;
+        }
+        if (price) {
+            post.price= price;
+        }
+    
+        await post.save();
+    
+        res.status(StatusCodes.OK).json({ post});
+      } catch (error) {
+        next(error);
+      };
 };
 
 const deletePost = async (req, res, next) => {
     console.log('delete post');
 };
-const getAllPosts = async (req, res) => {
-    console.log('get all posts');
-};
+const getAllPosts = async (req, res,next) => {
+    try {
+        const post = await Post.find({})
+    
+        res.status(StatusCodes.OK).json({ post});
+      } catch (error) {
+        next(error);
+      }
+    };
+
 const getPost = async (req, res) => {
     console.log('get post');
 };
