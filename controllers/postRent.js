@@ -89,7 +89,30 @@ const updatePost = async (req, res, next) => {
 };
 
 const deletePost = async (req, res, next) => {
-    console.log('delete post');
+    try {
+        const { id } = req.params;
+        const post = await Post.findById(id);
+        
+        if (!post) {
+            throw new BadRequestError('Post not found');
+        }
+
+        if (!post.jobPoster || !post.jobPoster.createdBy) {
+            throw new BadRequestError('Post is missing required jobPoster information.');
+        }
+
+        if (post.jobPoster.createdBy.toString() !== req.user.userId) {
+            console.log(post.jobPoster.createdBy);
+            console.log(req.user.userId);
+            throw new UnauthenticatedError('You are not authorized to delete this post');
+        }
+
+        await post.remove();
+
+        res.status(StatusCodes.NO_CONTENT).send();
+    } catch (error) {
+        next(error);
+    }
 };
 const getAllPosts = async (req, res,next) => {
     try {
@@ -101,9 +124,21 @@ const getAllPosts = async (req, res,next) => {
       }
     };
 
-const getPost = async (req, res) => {
-    console.log('get post');
-};
+const getPost = async (req, res,next) => {
+    try {
+        const { id } = req.params;
+    
+        const post = await Post.findById(id);
+    
+        if (!post) {
+          throw new BadRequestError('post not found');
+        }
+    
+        res.status(StatusCodes.OK).json({ post });
+      } catch (error) {
+        next(error);
+      }
+    };
 
 
 

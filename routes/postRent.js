@@ -10,7 +10,7 @@ const{ postRent,updatePost, deletePost , getAllPosts ,getPost  } = require('../c
 router.route('/').post(authenticateUser, postRent).get(getAllPosts );
 router.route('/:id').get(getPost);
 router.patch('/:id', authenticateUser,updatePost);
-router.delete('/:id', authenticateUser,authenticateUsers, deletePost);
+router.delete('/:id', authenticateUser, deletePost);
 
 
 
