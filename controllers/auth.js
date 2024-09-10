@@ -11,7 +11,7 @@ const {
   sendVerificationEmail,
   sendResetPasswordEmail,
   createHash,
-} = require('../utils');
+} = require('../utils'); 
 const crypto = require('crypto');
 
 const register = async (req, res) => {
