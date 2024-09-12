@@ -13,6 +13,24 @@ const postSchema = new mongoose.Schema({
       type:String,
       required:true
     },
+    roomDiscription: {
+      noofPeople: {
+        type: Number,
+        required: true,
+      },
+      noOfRooms: {
+        type: Number,
+        required: true,
+      },
+      noOfBathrooms: {
+        type: Number,
+        required: true,
+      },
+      fullyFuernished: {
+        type: Boolean,
+        required: true,
+      },
+    },
     jobPoster:{
     createdBy: {
       type: mongoose.Types.ObjectId,
@@ -30,6 +48,14 @@ const postSchema = new mongoose.Schema({
     image: {
       type: String,
       required: true,
+    },
+    userVerified: {
+      type: Boolean,
+      default: false,
+    }, 
+    createdAt: {
+      type: Date,
+      default: Date.now,
     },
 },
 { timestamps: true }

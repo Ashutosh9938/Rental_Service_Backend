@@ -3,6 +3,10 @@ const validator = require('validator');
 const bcrypt = require('bcryptjs');
 
 const UserSchema = new mongoose.Schema({
+  profilePicture:{
+    type:String,
+    required:true,
+  },
   name: {
     type: String,
     required: [true, 'Please provide name'],
@@ -39,6 +43,14 @@ const UserSchema = new mongoose.Schema({
   },
   passwordTokenExpirationDate: {
     type: Date,
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+  personalDocumentsubmitter: {
+    type: Boolean,
+    default: false,
   },
 });
 
