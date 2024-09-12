@@ -1,110 +1,123 @@
+const mongoose = require('mongoose');
 const Post = require('../models/post');
 const User = require('../models/User');
 const { StatusCodes } = require('http-status-codes');
 const cloudinary = require('cloudinary').v2;
-
 const { BadRequestError, UnauthenticatedError } = require('../errors');
 
-
+// Function to post a new rent
 const postRent = async (req, res, next) => {
-    const userId =req.user.userId;
-    const user= await User.findById(userId);
-   if (!user) {
-       throw new UnauthenticatedError('Please authenticate first');  
-    } 
-    
-    const media =req.files.media
+    const userId = req.user.userId;
+    const user = await User.findById(userId);
 
-    if(!media) {
+    if (!user) {
+        throw new UnauthenticatedError('Please authenticate first');
+    }
+
+    const media = req.files?.media;
+
+    if (!media) {
         throw new BadRequestError('Please upload a file');
     }
-    const uploadpromises = new Promise((resolve,reject)=>{
-        const stream = cloudinary.uploader.upload_stream(
-            { resource_type: 'auto', folder: 'job_media', tags: [userId, user.name] },(error,result)=>{
-                if(result) {
-                    resolve(result);
-                } else {
-                    reject(error);
+
+    try {
+        const uploadResult = await new Promise((resolve, reject) => {
+            const stream = cloudinary.uploader.upload_stream(
+                { resource_type: 'auto', folder: 'job_media', tags: [userId, user.name] },
+                (error, result) => {
+                    if (result) {
+                        resolve(result);
+                    } else {
+                        reject(error);
+                    }
                 }
-            }
-        )
-        stream.end(media.data);
-    })
-    const uploadedMedia=  await uploadpromises;
-    const { title, body, location, price } = req.body;
-    if(fields = !title || !body || !location || !price) {
-        throw new BadRequestError('Please provide all fields ' `${fields}`);
-    }
+            );
+            stream.end(media.data);
+        });
 
-    const postData={
-        title,
-        body,
-        location,
-        price,
-        image: uploadedMedia.secure_url,
-        jobPoster:{
-        createdBy:req.user.userId,
-        name:user.name,
+        const { title, body, location, price, roomDiscription } = req.body;
+
+        // Check if fields are undefined
+        if (!title || !body || !location || !price || !roomDiscription) {
+            throw new BadRequestError('Please provide all fields');
         }
-    }
 
-    const post = await Post.create(postData);
-    res.status(StatusCodes.CREATED).json({ post });
+        // Parse location and roomDiscription
+        const locationParsed = JSON.parse(location);
+        const roomDiscriptionParsed = JSON.parse(roomDiscription);
+
+        const postData = {
+            title,
+            body,
+            location: {
+                type: 'Point',
+                coordinates: [locationParsed.coordinatesX, locationParsed.coordinatesY],
+            },
+            price,
+            roomDiscription: {
+                noofPeople: roomDiscriptionParsed.noofPeople,
+                noOfRooms: roomDiscriptionParsed.noOfRooms,
+                noOfBathrooms: roomDiscriptionParsed.noOfBathrooms,
+                fullyFurnished: roomDiscriptionParsed.fullyFurnished,
+            },
+            image: uploadResult.secure_url,
+            jobPoster: {
+                createdBy: userId,
+                name: user.name,
+            }
+        };
+
+        const post = await Post.create(postData);
+        res.status(StatusCodes.CREATED).json({ post });
+    } catch (error) {
+        next(error);
+    }
 };
 
+
+
+// Function to update a post
 const updatePost = async (req, res, next) => {
     try {
         const { id } = req.params;
         const post = await Post.findById(id);
-        if (!post) {
-          throw new BadRequestError('post not found');
-        }
-    
-        if (post.jobPoster.createdBy.toString() !== req.user.userId) {
-            console.log( post.jobPoster.createdBy);
-            console.log(req.user.userId);
-          throw new UnauthenticatedError('You are not authorized to update this post');
-        }
-    
-        const { title, body, location, price  } = req.body;
-    
-        if (title) {
-            post.title = title;
-        }
-        if (body) {
-            post.body = body;
-        }
-        if (location) {
-            post.location = location;
-        }
-        if (price) {
-            post.price= price;
-        }
-    
-        await post.save();
-    
-        res.status(StatusCodes.OK).json({ post});
-      } catch (error) {
-        next(error);
-      };
-};
 
-const deletePost = async (req, res, next) => {
-    try {
-        const { id } = req.params;
-        const post = await Post.findById(id);
-        
         if (!post) {
             throw new BadRequestError('Post not found');
         }
 
-        if (!post.jobPoster || !post.jobPoster.createdBy) {
-            throw new BadRequestError('Post is missing required jobPoster information.');
+        if (post.jobPoster.createdBy.toString() !== req.user.userId) {
+            throw new UnauthenticatedError('You are not authorized to update this post');
         }
 
-        if (post.jobPoster.createdBy.toString() !== req.user.userId) {
-            console.log(post.jobPoster.createdBy);
-            console.log(req.user.userId);
+        const { title, body, location, price, roomDescription } = req.body;
+
+        if (title) post.title = title;
+        if (body) post.body = body;
+        if (location) post.location = location;
+        if (price) post.price = price;
+        if (roomDescription) post.roomDescription = JSON.parse(roomDescription); // Ensure it's parsed as an object
+
+        await post.save();
+
+        res.status(StatusCodes.OK).json({ post });
+    } catch (error) {
+        next(error);
+    }
+};
+
+
+// Function to delete a post
+const deletePost = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const post = await Post.findById(id);
+
+        if (!post) {
+            throw new BadRequestError('Post not found');
+        }
+
+        if (!post.jobPoster || post.jobPoster.createdBy.toString() !== req.user.userId) {
             throw new UnauthenticatedError('You are not authorized to delete this post');
         }
 
@@ -115,36 +128,31 @@ const deletePost = async (req, res, next) => {
         next(error);
     }
 };
-const getAllPosts = async (req, res,next) => {
-    try {
-        const post = await Post.find({})
-    
-        res.status(StatusCodes.OK).json({ post});
-      } catch (error) {
-        next(error);
-      }
-    };
 
-const getPost = async (req, res,next) => {
+// Function to get all posts
+const getAllPosts = async (req, res, next) => {
+    try {
+        const posts = await Post.find({});
+        res.status(StatusCodes.OK).json({ posts });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// Function to get a single post
+const getPost = async (req, res, next) => {
     try {
         const { id } = req.params;
-    
         const post = await Post.findById(id);
-    
+
         if (!post) {
-          throw new BadRequestError('post not found');
+            throw new BadRequestError('Post not found');
         }
-    
+
         res.status(StatusCodes.OK).json({ post });
-      } catch (error) {
+    } catch (error) {
         next(error);
-      }
-    };
+    }
+};
 
-
-
-
-
-
-
-module.exports = { postRent,updatePost, deletePost , getAllPosts ,getPost  };
+module.exports = { postRent, updatePost, deletePost, getAllPosts, getPost };

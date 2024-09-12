@@ -48,7 +48,7 @@ const UserSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
-  personalDocumentsubmitter: {
+  personalDocumentsubmitted: {
     type: Boolean,
     default: false,
   },
