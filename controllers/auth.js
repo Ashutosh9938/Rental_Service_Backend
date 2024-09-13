@@ -75,42 +75,42 @@ const register = async (req, res) => {
 };
 
 const verifyEmail = async (req, res) => {
-  const { verificationToken, email } = req.body;
+//   const { verificationToken, email } = req.body;
 
-  if (!verificationToken || !email) {
-    throw new CustomError.BadRequestError('Please provide both verification token and email');
-  }
+//   if (!verificationToken || !email) {
+//     throw new CustomError.BadRequestError('Please provide both verification token and email');
+//   }
 
-  try {
-    const user = await User.findOne({ email });
+//   try {
+//     const user = await User.findOne({ email });
 
-    if (!user) {
-      throw new CustomError.UnauthenticatedError('Verification Failed');
-    }
+//     if (!user) {
+//       throw new CustomError.UnauthenticatedError('Verification Failed');
+//     }
 
-    if (user.verificationToken !== verificationToken) {
-      throw new CustomError.UnauthenticatedError('Verification Failed');
-    }
+//     if (user.verificationToken !== verificationToken) {
+//       throw new CustomError.UnauthenticatedError('Verification Failed');
+//     }
 
-    if (user.isVerified) {
-      throw new CustomError.BadRequestError('Email already verified');
-    }
+//     if (user.isVerified) {
+//       throw new CustomError.BadRequestError('Email already verified');
+//     }
 
-    user.isVerified = true;
-    user.verified = Date.now();
-    user.verificationToken = '';
+//     user.isVerified = true;
+//     user.verified = Date.now();
+//     user.verificationToken = '';
 
-    await user.save();
+//     await user.save();
 
-    res.status(StatusCodes.OK).json({ msg: 'Email Verified' });
-  } catch (error) {
-    console.error('Email verification error:', error);
-    if (error instanceof CustomError.CustomAPIError) {
-      res.status(error.statusCode).json({ msg: error.message });
-    } else {
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ msg: 'An error occurred during verification' });
-    }
-  }
+//     res.status(StatusCodes.OK).json({ msg: 'Email Verified' });
+//   } catch (error) {
+//     console.error('Email verification error:', error);
+//     if (error instanceof CustomError.CustomAPIError) {
+//       res.status(error.statusCode).json({ msg: error.message });
+//     } else {
+//       res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ msg: 'An error occurred during verification' });
+//     }
+//   }
 };
 
 const login = async (req, res) => {
@@ -120,6 +120,9 @@ const login = async (req, res) => {
     throw new CustomError.BadRequestError('Please provide email and password');
   }
   const user = await User.findOne({ email });
+  if (!user) {
+    throw new CustomError.UnauthenticatedError('user not found with this email');
+  }
 
   // if (!user) {
   //   throw new CustomError.UnauthenticatedError('Invalid Credentials');

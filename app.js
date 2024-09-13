@@ -32,13 +32,13 @@ app.set('trust proxy', 1);
 
 // Middleware setup
 
-// app.use(cors({
-//   origin: 
-//   // process.env.HOST_URL  
-//     'http://localhost:3000',
-//   methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'],
-//   credentials: true
-// }));
+app.use(cors({
+  origin: 
+  // process.env.HOST_URL  
+    'http://localhost:5173',
+  methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'],
+  credentials: true
+}));
 
 app.use(express.json());
 app.use(cookieParser(process.env.JWT_SECRET));
