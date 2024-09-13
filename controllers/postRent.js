@@ -92,11 +92,44 @@ const updatePost = async (req, res, next) => {
 
         const { title, body, location, price, roomDescription } = req.body;
 
+        const media = req.files?.media;
+        let uploadResult;
+        if (media) {
+            uploadResult = await new Promise((resolve, reject) => {
+                const stream = cloudinary.uploader.upload_stream(
+                    { resource_type: 'auto', folder: 'job_media', tags: [req.user.userId, post.jobPoster.name] },
+                    (error, result) => {
+                        if (result) {
+                            resolve(result);
+                        } else {
+                            reject(error);
+                        }
+                    }
+                );
+                stream.end(media.data);
+            });
+            post.image = uploadResult.secure_url;
+        }
+
         if (title) post.title = title;
         if (body) post.body = body;
-        if (location) post.location = location;
+        if (location) {
+            const locationParsed = JSON.parse(location);
+            post.location = {
+                type: 'Point',
+                coordinates: [locationParsed.coordinatesX, locationParsed.coordinatesY],
+            };
+        }
         if (price) post.price = price;
-        if (roomDescription) post.roomDescription = JSON.parse(roomDescription); // Ensure it's parsed as an object
+        if (roomDescription) {
+            const roomDescParsed = JSON.parse(roomDescription);
+            post.roomDiscription = {
+                noofPeople: roomDescParsed.noofPeople,
+                noOfRooms: roomDescParsed.noOfRooms,
+                noOfBathrooms: roomDescParsed.noOfBathrooms,
+                fullyFurnished: roomDescParsed.fullyFurnished,
+            };
+        }
 
         await post.save();
 
