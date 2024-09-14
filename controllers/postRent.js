@@ -162,15 +162,26 @@ const deletePost = async (req, res, next) => {
     }
 };
 
-// Function to get all posts
+
 const getAllPosts = async (req, res, next) => {
     try {
-        const posts = await Post.find({});
-        res.status(StatusCodes.OK).json({ posts });
+    
+      const { page = 1, limit = 10 } = req.query;
+      const pageNumber = parseInt(page, 10);
+      const limitNumber = parseInt(limit, 10);
+      const totalPosts = await Post.countDocuments();
+      const posts = await Post.find({})
+        .skip((pageNumber - 1) * limitNumber)
+        .limit(limitNumber);
+      res.status(StatusCodes.OK).json({
+        posts,
+        totalPosts,      
+        postsPerPage: limitNumber, 
+      });
     } catch (error) {
-        next(error);
+      next(error);
     }
-};
+  };
 
 // Function to get a single post
 const getPost = async (req, res, next) => {
