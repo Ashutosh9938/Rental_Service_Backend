@@ -3,6 +3,7 @@ const router = express.Router();
 const { authenticateUser } = require('../middleware/authentication');
 const { authenticateUsers } = require('../middleware/full-auth');
 const testUser = require('../middleware/testUser');
+const  {submitKYC} = require('../controllers/userVerification');
 
 const rateLimiter = require('express-rate-limit');
 
@@ -36,5 +37,8 @@ router.post('/verify-email', verifyEmail);
 router.post('/reset-password', resetPassword);
 router.post('/forgot-password', forgotPassword);
 router.patch('/updateUser', authenticateUser,authenticateUsers, testUser, updateUser);
+router.post('/kyc', authenticateUser, submitKYC);
+
+
 
 module.exports = router;
