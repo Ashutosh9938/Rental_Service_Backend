@@ -1,18 +1,21 @@
 const stripe = require('stripe')(process.env.STRIPE_KEY);
 
-const stripeController = async (req, res) => {
-  const { purchase, total_amount, shipping_fee } = req.body;
+const createPaymentIntent = async (req, res) => {
+  const { amount } = req.body;
 
-  const calculateOrderAmount = () => {
-    return total_amount + shipping_fee;
-  };
+  try {
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: amount * 100, // Stripe expects amount in cents
+      currency: 'usd',
+    });
 
-  const paymentIntent = await stripe.paymentIntents.create({
-    amount: calculateOrderAmount(),
-    currency: 'usd',
-  });
-
-  res.json({ clientSecret: paymentIntent.client_secret });
+    res.json({
+      clientSecret: paymentIntent.client_secret,
+      dpmCheckerLink: paymentIntent.dpm_checker_link, // Include this if you're using 3D Secure
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 };
 
-module.exports = stripeController;
+module.exports = { createPaymentIntent };

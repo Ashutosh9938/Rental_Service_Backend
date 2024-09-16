@@ -20,7 +20,7 @@ cloudinary.config({
 });
 
 const connectDB = require('./db/connect');
-const stripeController = require('./controllers/stripe');
+const stripeController = require('./routes/stripe');
 const authRouter = require('./routes/auth');
 const postRouter = require('./routes/postRent');
 const kycRouter = require('./routes/userVerification');
@@ -51,7 +51,7 @@ app.use(fileUpload({ useTempFiles: false }));
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/post',  postRouter);
 app.use('/api/v1/kyc', kycRouter);
-app.post('/stripe', stripeController);
+app.use('/api/v1/stripe', stripeController);
 
 
 
