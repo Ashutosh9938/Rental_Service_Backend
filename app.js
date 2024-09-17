@@ -36,7 +36,7 @@ app.set('trust proxy', 1);
 
 app.use(cors({
   origin: 
-  // process.env.HOST_URL  
+  process.env.HOST_URL  ||
     'http://localhost:5173',
   methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'],
   credentials: true
