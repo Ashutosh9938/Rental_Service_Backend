@@ -26,6 +26,7 @@ const {
   forgotPassword,
   resetPassword,
   updateUser,
+  googleLogin,
 
 } = require('../controllers/auth');
 
@@ -38,6 +39,7 @@ router.post('/reset-password', resetPassword);
 router.post('/forgot-password', forgotPassword);
 router.patch('/updateUser', authenticateUser,authenticateUsers, testUser, updateUser);
 router.post('/kyc', authenticateUser, submitKYC);
+router.post('/google-login', googleLogin);
 
 
 

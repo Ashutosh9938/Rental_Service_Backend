@@ -1,4 +1,5 @@
 require('dotenv').config();
+const { OAuth2Client } = require('google-auth-library');
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const Token = require('../models/Token');
@@ -15,13 +16,19 @@ const {
 const crypto = require('crypto');
 
 const register = async (req, res) => {
-  const { email, name, password } = req.body;
+  const { email, name, lastName ,password , comformationPassword,nationality,phoneNumber } = req.body;
 
   const emailAlreadyExists = await User.findOne({ email });
   if (emailAlreadyExists) {
     throw new CustomError.BadRequestError('Email already exists');
   }
-
+if (password !== comformationPassword) {
+    throw new CustomError.BadRequestError('Passwords do not match');
+  }
+  if (!email || !name || !lastName || !password || !comformationPassword || !nationality || !phoneNumber)
+  {
+    throw new CustomError.BadRequestError('Please provide all values');
+  }
   // first registered user is an admin
   // const isFirstAccount = (await User.countDocuments({})) === 0;
   // const role = isFirstAccount ? 'admin' : 'user';
@@ -32,6 +39,10 @@ const register = async (req, res) => {
     name,
     email,
     password,
+    comformationPassword,
+    nationality,
+    phoneNumber,
+    lastName
     // role,
     // verificationToken,
   });
@@ -259,6 +270,44 @@ const updateUser = async (req, res) => {
   });
 };
 
+const googleLogin = async (req, res) => {
+  try {
+    const { credential } = req.body;
+    
+    // Verify the Google token
+    const ticket = await client.verifyIdToken({
+      idToken: credential,
+      audience: process.env.Clientsecret, // Replace with your Google Client ID
+    });
+
+    const payload = ticket.getPayload();
+    const { email, name, sub: googleId } = payload;
+
+    // Check if the user exists
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      // If user doesn't exist, create a new one
+      user = await User.create({
+        email,
+        name,
+        googleId
+      });
+    }
+
+    // Create a JWT token
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1d' });
+
+    // Set a cookie with the token
+    res.cookie('token', token, { httpOnly: true });
+    res.status(200).json({ user, token });
+  } catch (error) {
+    console.error('Error in Google login:', error);
+    res.status(500).json({ error: 'Google login failed' });
+  }
+};
+
+
 module.exports = {
   register,
   login,
@@ -267,5 +316,5 @@ module.exports = {
   forgotPassword,
   resetPassword,
   updateUser,
-
+  googleLogin 
 };
