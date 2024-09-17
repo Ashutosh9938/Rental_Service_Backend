@@ -6,6 +6,8 @@ const Token = require('../models/Token');
 const { createJWT }=require('../utils')
 const { StatusCodes } = require('http-status-codes');
 const CustomError = require('../errors');
+
+const client = new OAuth2Client(process.env.ClientId);
 const {
   attachCookiesToResponse,
   createTokenUser,
@@ -273,11 +275,11 @@ const updateUser = async (req, res) => {
 const googleLogin = async (req, res) => {
   try {
     const { credential } = req.body;
-    
+
     // Verify the Google token
     const ticket = await client.verifyIdToken({
       idToken: credential,
-      audience: process.env.Clientsecret, // Replace with your Google Client ID
+      audience: process.env.ClientId, // Your Google Client ID
     });
 
     const payload = ticket.getPayload();
@@ -295,18 +297,36 @@ const googleLogin = async (req, res) => {
       });
     }
 
-    // Create a JWT token
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1d' });
+    const tokenUser = createTokenUser(user);
 
-    // Set a cookie with the token
-    res.cookie('token', token, { httpOnly: true });
-    res.status(200).json({ user, token });
+    let refreshToken = '';
+    const existingToken = await Token.findOne({ user: user._id });
+
+    if (existingToken) {
+      const { isValid } = existingToken;
+      if (!isValid) {
+        throw new CustomError.UnauthenticatedError('Invalid Credentials');
+      }
+      refreshToken = existingToken.refreshToken;
+      attachCookiesToResponse({ res, user: tokenUser, refreshToken });
+      res.status(StatusCodes.OK).json({ user: tokenUser });
+      return;
+    }
+
+    refreshToken = crypto.randomBytes(40).toString('hex');
+    const userAgent = req.headers['user-agent'];
+    const ip = req.ip;
+    const userToken = { refreshToken, ip, userAgent, user: user._id };
+
+    await Token.create(userToken);
+    attachCookiesToResponse({ res, user: tokenUser, refreshToken });
+
+    res.status(StatusCodes.OK).json({ user: tokenUser });
   } catch (error) {
     console.error('Error in Google login:', error);
     res.status(500).json({ error: 'Google login failed' });
   }
 };
-
 
 module.exports = {
   register,

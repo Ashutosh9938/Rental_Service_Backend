@@ -59,16 +59,6 @@ const UserSchema = new mongoose.Schema({
       message: 'Password must contain at least one uppercase letter, one number, and one special character',
     },
   },
-  comformationPassword: {
-    type: String,
-    required: [true, 'Please provide confirmation password'],
-    validate: {
-      validator: function (value) {
-        return value === this.password;
-      },
-      message: 'Passwords do not match',
-    },
-  },
   role: {
     type: String,
     enum: ['admin', 'user'],
@@ -98,10 +88,10 @@ const UserSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
-  googleId: {
-    type: String,
-    required: true,
-  },
+  // googleId: {
+  //   type: String,
+  //   required: true,
+  // },
 });
 
 // Middleware to hash the password before saving
