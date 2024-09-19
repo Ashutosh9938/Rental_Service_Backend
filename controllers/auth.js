@@ -83,7 +83,7 @@ if (password !== comformationPassword) {
 
   attachCookiesToResponse({ res, user: tokenUser, refreshToken });
 
-  res.status(StatusCodes.OK).json({ user: tokenUser });
+  res.status(StatusCodes.OK).json({ user: tokenUser ,tokenUser});
 
 };
 
@@ -174,7 +174,7 @@ const login = async (req, res) => {
 
   attachCookiesToResponse({ res, user: tokenUser, refreshToken });
 
-  res.status(StatusCodes.OK).json({ user: tokenUser,existingToken});
+  res.status(StatusCodes.OK).json({ user: tokenUser,tokenUser});
 };
 
 
