@@ -16,6 +16,7 @@ const submitKYC = async (req, res, next) => {
         if (!user) {
             return next(new BadRequestError('User not found'));
         }
+        
 
         const existingKyc = await KYC.findOne({ userId });
         if (existingKyc) {
