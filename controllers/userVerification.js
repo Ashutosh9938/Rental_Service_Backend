@@ -16,12 +16,13 @@ const submitKYC = async (req, res, next) => {
         if (!user) {
             return next(new BadRequestError('User not found'));
         }
-        
+
 
         const existingKyc = await KYC.findOne({ userId });
         if (existingKyc) {
             return next(new BadRequestError('KYC already submitted'));
-        }
+        } 
+        
 
         const proofOfIdentity = req.files?.proofOfIdentity;
         const signedByFile = req.files?.signedByFile;
