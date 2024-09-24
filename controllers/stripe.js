@@ -11,11 +11,13 @@ const createPaymentIntent = async (req, res) => {
 
     res.json({
       clientSecret: paymentIntent.client_secret,
-      dpmCheckerLink: paymentIntent.dpm_checker_link, // Include this if you're using 3D Secure
+      dpmCheckerLink: paymentIntent.dpm_checker_link, 
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
-};
+}; 
+
+
 
 module.exports = { createPaymentIntent };

@@ -64,6 +64,11 @@ const UserSchema = new mongoose.Schema({
     enum: ['admin', 'user'],
     default: 'user',
   },
+  lookingFor:{
+    type: String,
+    enum:['RoomPatner', 'appartment', 'both'],
+
+  },
   verificationToken: String,
   isVerified: {
     type: Boolean,
