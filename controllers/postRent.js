@@ -11,7 +11,7 @@ const postRent = async (req, res, next) => {
     const user = await User.findById(userId);
 console.log(userId);
     if (!user) {
-        throw new UnauthenticatedError('Please authenticate first');
+        throw new UnauthenticatedError('Please authenticate first'); 
     }
 
     const media = req.files?.media;
