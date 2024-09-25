@@ -16,7 +16,7 @@ console.log(userId);
 
     const media = req.files?.media;    
 
-    if (!media) {
+    if (!media) {  
         throw new BadRequestError('Please upload a file');
     }
 
