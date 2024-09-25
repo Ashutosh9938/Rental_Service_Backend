@@ -14,7 +14,7 @@ console.log(userId);
         throw new UnauthenticatedError('Please authenticate first'); 
     }
 
-    const media = req.files?.media;
+    const media = req.files?.media;    
 
     if (!media) {
         throw new BadRequestError('Please upload a file');
