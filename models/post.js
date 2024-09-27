@@ -29,6 +29,7 @@ const postSchema = new mongoose.Schema({
       },
       noOfRooms: {
         type: Number,
+
         required: true,
       },
       noOfBathrooms: {
