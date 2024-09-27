@@ -23,7 +23,7 @@ const postSchema = new mongoose.Schema({
         },
     },
     roomDiscription: {
-      noofPeople: {
+      noofPeople: {  
         type: Number,
         required: true,
       },

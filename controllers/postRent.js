@@ -45,7 +45,7 @@ console.log(userId);
         // Parse location and roomDiscription
         const locationParsed = JSON.parse(location);
         const roomDiscriptionParsed = JSON.parse(roomDiscription);
-
+  
         const postData = {
             title,
             body,
