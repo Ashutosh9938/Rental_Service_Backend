@@ -9,7 +9,7 @@ const { BadRequestError, UnauthenticatedError } = require('../errors');
 const postRent = async (req, res, next) => {
     const userId = req.user.userId;
     const user = await User.findById(userId);
-console.log(userId);
+
     if (!user) {
         throw new UnauthenticatedError('Please authenticate first'); 
     }
@@ -74,8 +74,6 @@ console.log(userId);
     }
 };
 
-
-
 // Function to update a post
 const updatePost = async (req, res, next) => {
     try {
@@ -139,7 +137,6 @@ const updatePost = async (req, res, next) => {
     }
 };
 
-
 // Function to delete a post
 const deletePost = async (req, res, next) => {
     try {
@@ -162,10 +159,9 @@ const deletePost = async (req, res, next) => {
     }
 };
 
-
+// Function to get all posts
 const getAllPosts = async (req, res, next) => {
     try {
-    
       const { page = 1, limit = 10 } = req.query;
       const pageNumber = parseInt(page, 10);
       const limitNumber = parseInt(limit, 10);
@@ -181,7 +177,7 @@ const getAllPosts = async (req, res, next) => {
     } catch (error) {
       next(error);
     }
-  };
+};
 
 // Function to get a single post
 const getPost = async (req, res, next) => {
@@ -193,10 +189,37 @@ const getPost = async (req, res, next) => {
             throw new BadRequestError('Post not found');
         }
 
+        // Increment the views count
+        post.views += 1;
+        await post.save();
+
         res.status(StatusCodes.OK).json({ post });
     } catch (error) {
         next(error);
     }
 };
 
-module.exports = { postRent, updatePost, deletePost, getAllPosts, getPost };
+// Function to get the top 4 featured houses (most viewed houses)
+const getFeaturedHouse = async (req, res, next) => {
+    try {
+        // Get the total count of posts
+        const totalPostsCount = await Post.countDocuments();
+
+        // Find the top 4 posts with the most views
+        const featuredPosts = await Post.find().sort({ views: -1 }).limit(3).exec();
+
+        if (!featuredPosts || featuredPosts.length === 0) {
+            throw new BadRequestError('No featured houses found');
+        }
+
+        res.status(StatusCodes.OK).json({ 
+            totalPosts: totalPostsCount,  // Return the total count of posts
+            featuredPosts 
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+
+module.exports = { postRent, updatePost, deletePost, getAllPosts, getPost, getFeaturedHouse };

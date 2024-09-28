@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 
-
 const postSchema = new mongoose.Schema({
     title: {
         type: String,
@@ -10,7 +9,6 @@ const postSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-
     location: {
         type: {
             type: String, 
@@ -29,14 +27,13 @@ const postSchema = new mongoose.Schema({
       },
       noOfRooms: {
         type: Number,
-
         required: true,
       },
       noOfBathrooms: {
         type: Number,
         required: true,
       },
-      fullyFurnished: { // Typo corrected
+      fullyFurnished: {
         type: Boolean,
         required: true,
       },
@@ -59,6 +56,10 @@ const postSchema = new mongoose.Schema({
       type: String,
       required: true,
     },
+    views: { // New field to track the number of views
+      type: Number,
+      default: 0,
+    },
     userVerified: {
       type: Boolean,
       default: false,
@@ -70,7 +71,6 @@ const postSchema = new mongoose.Schema({
 }, 
 { timestamps: true }
 );
-
 
 postSchema.index({ location: '2dsphere' });
 

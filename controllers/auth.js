@@ -3,7 +3,7 @@ const { OAuth2Client } = require('google-auth-library');
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const Token = require('../models/Token');
-const { createJWT }=require('../utils')
+const { createJWT } = require('../utils');
 const { StatusCodes } = require('http-status-codes');
 const CustomError = require('../errors');
 
@@ -18,24 +18,18 @@ const {
 const crypto = require('crypto');
 
 const register = async (req, res) => {
-  const { email, name, lastName ,password , comformationPassword,nationality,phoneNumber } = req.body;
+  const { email, name, lastName ,password , comformationPassword, nationality, phoneNumber } = req.body;
 
   const emailAlreadyExists = await User.findOne({ email });
   if (emailAlreadyExists) {
     throw new CustomError.BadRequestError('Email already exists');
   }
-if (password !== comformationPassword) {
+  if (password !== comformationPassword) {
     throw new CustomError.BadRequestError('Passwords do not match');
   }
-  if (!email || !name || !lastName || !password || !comformationPassword || !nationality || !phoneNumber)
-  {
+  if (!email || !name || !lastName || !password || !comformationPassword || !nationality || !phoneNumber) {
     throw new CustomError.BadRequestError('Please provide all values');
   }
-  // first registered user is an admin
-  // const isFirstAccount = (await User.countDocuments({})) === 0;
-  // const role = isFirstAccount ? 'admin' : 'user';
-
-  // const verificationToken = crypto.randomBytes(40).toString('hex');
 
   const user = await User.create({
     name,
@@ -57,6 +51,7 @@ if (password !== comformationPassword) {
   //   verificationToken: user.verificationToken,
   //   origin,
   // });
+  
   const tokenUser = createTokenUser(user);
 
   let refreshToken = '';
@@ -84,46 +79,45 @@ if (password !== comformationPassword) {
   attachCookiesToResponse({ res, user: tokenUser, refreshToken });
 
   res.status(StatusCodes.OK).json({ user: tokenUser ,tokenUser});
-
 };
 
 const verifyEmail = async (req, res) => {
-//   const { verificationToken, email } = req.body;
+  //   const { verificationToken, email } = req.body;
 
-//   if (!verificationToken || !email) {
-//     throw new CustomError.BadRequestError('Please provide both verification token and email');
-//   }
+  //   if (!verificationToken || !email) {
+  //     throw new CustomError.BadRequestError('Please provide both verification token and email');
+  //   }
 
-//   try {
-//     const user = await User.findOne({ email });
+  //   try {
+  //     const user = await User.findOne({ email });
 
-//     if (!user) {
-//       throw new CustomError.UnauthenticatedError('Verification Failed');
-//     }
+  //     if (!user) {
+  //       throw new CustomError.UnauthenticatedError('Verification Failed');
+  //     }
 
-//     if (user.verificationToken !== verificationToken) {
-//       throw new CustomError.UnauthenticatedError('Verification Failed');
-//     }
+  //     if (user.verificationToken !== verificationToken) {
+  //       throw new CustomError.UnauthenticatedError('Verification Failed');
+  //     }
 
-//     if (user.isVerified) {
-//       throw new CustomError.BadRequestError('Email already verified');
-//     }
+  //     if (user.isVerified) {
+  //       throw new CustomError.BadRequestError('Email already verified');
+  //     }
 
-//     user.isVerified = true;
-//     user.verified = Date.now();
-//     user.verificationToken = '';
+  //     user.isVerified = true;
+  //     user.verified = Date.now();
+  //     user.verificationToken = '';
 
-//     await user.save();
+  //     await user.save();
 
-//     res.status(StatusCodes.OK).json({ msg: 'Email Verified' });
-//   } catch (error) {
-//     console.error('Email verification error:', error);
-//     if (error instanceof CustomError.CustomAPIError) {
-//       res.status(error.statusCode).json({ msg: error.message });
-//     } else {
-//       res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ msg: 'An error occurred during verification' });
-//     }
-//   }
+  //     res.status(StatusCodes.OK).json({ msg: 'Email Verified' });
+  //   } catch (error) {
+  //     console.error('Email verification error:', error);
+  //     if (error instanceof CustomError.CustomAPIError) {
+  //       res.status(error.statusCode).json({ msg: error.message });
+  //     } else {
+  //       res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ msg: 'An error occurred during verification' });
+  //     }
+  //   }
 };
 
 const login = async (req, res) => {
@@ -148,6 +142,7 @@ const login = async (req, res) => {
   // if (!user.isVerified) {
   //   throw new CustomError.UnauthenticatedError('Please verify your email');
   // }
+  
   const tokenUser = createTokenUser(user);
 
   let refreshToken = '';
@@ -176,7 +171,6 @@ const login = async (req, res) => {
 
   res.status(StatusCodes.OK).json({ user: tokenUser,tokenUser});
 };
-
 
 const logout = async (req, res) => {
   await Token.findOneAndDelete({ user: req.user.userId });
@@ -218,9 +212,7 @@ const forgotPassword = async (req, res) => {
     await user.save();
   }
 
-  res
-    .status(StatusCodes.OK)
-    .json({ msg: 'Please check your email for reset password link' });
+  res.status(StatusCodes.OK).json({ msg: 'Please check your email for reset password link' });
 };
 
 const resetPassword = async (req, res) => {
@@ -248,25 +240,35 @@ const resetPassword = async (req, res) => {
 };
 
 const updateUser = async (req, res) => {
-  const { email, name, lastName, location } = req.body;
-  if (!email || !name || !lastName || !location) {
-    throw new BadRequest('Please provide all values');
+  const { email, name, lastName, location, lookingFor } = req.body;
+
+  if (!email || !name || !lastName || !location || !lookingFor) {
+    throw new CustomError.BadRequestError('Please provide all values');
   }
+
+  if (!['RoomPatner', 'appartment', 'both'].includes(lookingFor)) {
+    throw new CustomError.BadRequestError('Please provide a valid lookingFor value');
+  }
+
   const user = await User.findOne({ _id: req.user.userId });
 
   user.email = email;
   user.name = name;
   user.lastName = lastName;
   user.location = location;
+  user.lookingFor = lookingFor;
 
   await user.save();
+  
   const token = user.createJWT();
+
   res.status(StatusCodes.OK).json({
     user: {
       email: user.email,
       lastName: user.lastName,
       location: user.location,
       name: user.name,
+      lookingFor: user.lookingFor,
       token,
     },
   });
@@ -276,20 +278,17 @@ const googleLogin = async (req, res) => {
   try {
     const { credential } = req.body;
 
-    // Verify the Google token
     const ticket = await client.verifyIdToken({
       idToken: credential,
-      audience: process.env.ClientId, // Your Google Client ID
+      audience: process.env.ClientId,
     });
 
     const payload = ticket.getPayload();
     const { email, name, sub: googleId } = payload;
 
-    // Check if the user exists
     let user = await User.findOne({ email });
 
     if (!user) {
-      // If user doesn't exist, create a new one
       user = await User.create({
         email,
         name,
@@ -328,6 +327,63 @@ const googleLogin = async (req, res) => {
   }
 };
 
+const getUsersLookingForRoomPartner = async (req, res) => {
+  try {
+    // We are hardcoding 'RoomPatner' since we only want to get users looking for room partners
+    const lookingFor = 'RoomPatner';
+
+    // Find users who are looking for a Room Partner
+    const users = await User.find({ lookingFor });
+
+    // Send the response with the list of users
+    res.status(StatusCodes.OK).json({ users });
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: 'An error occurred while fetching users' });
+  }
+};
+
+const getSingleUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      throw new CustomError.NotFoundError(`No user found with id: ${userId}`);
+    }
+    user.profileViews = (user.profileViews || 0) + 1;
+    await user.save();
+
+    res.status(StatusCodes.OK).json({ user });
+  } catch (error) {
+    console.error('Error fetching single user:', error);
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: 'An error occurred while fetching the user' });
+  }
+};
+const getTopViewedProfiles = async (req, res) => {
+  try {
+
+    const topUsers = await User.find({})
+      .sort({ profileViews: -1 })
+      .limit(3); 
+
+    res.status(StatusCodes.OK).json({ topUsers });
+  } catch (error) {
+    console.error('Error fetching top viewed profiles:', error);
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: 'An error occurred while fetching top viewed profiles' });
+  }
+};
+const getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find({});
+    res.status(StatusCodes.OK).json({ users });
+  } catch (error) {
+    console.error('Error fetching all users:', error);
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: 'An error occurred while fetching users' });
+  }
+};
+
 module.exports = {
   register,
   login,
@@ -336,5 +392,9 @@ module.exports = {
   forgotPassword,
   resetPassword,
   updateUser,
-  googleLogin 
+  googleLogin,
+  getUsersLookingForRoomPartner,
+  getSingleUser, 
+  getTopViewedProfiles,
+  getAllUsers
 };

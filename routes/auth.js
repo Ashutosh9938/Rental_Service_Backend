@@ -27,9 +27,16 @@ const {
   resetPassword,
   updateUser,
   googleLogin,
-
+  getUsersLookingForRoomPartner,
+  getSingleUser,
+  getTopViewedProfiles,
+  getAllUsers
 } = require('../controllers/auth');
 
+router.get('/users-looking-for', getUsersLookingForRoomPartner);
+router.get('/top-viewed-profiles',  getTopViewedProfiles);
+router.get('/', getAllUsers);
+router.get('/:userId', getSingleUser);
 router.post('/register', register);
 router.post('/login', login);
 

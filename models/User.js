@@ -67,7 +67,6 @@ const UserSchema = new mongoose.Schema({
   lookingFor:{
     type: String,
     enum:['RoomPatner', 'appartment', 'both'],
-
   },
   verificationToken: String,
   isVerified: {
@@ -93,13 +92,16 @@ const UserSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  profileViews: {
+    type: Number,
+    default: 0,
+  },
   // googleId: {
   //   type: String,
   //   required: true,
   // },
 });
 
-// Middleware to hash the password before saving
 UserSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
   
