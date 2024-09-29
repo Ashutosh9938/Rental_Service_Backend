@@ -10,68 +10,106 @@ const postSchema = new mongoose.Schema({
         required: true
     },
     location: {
-        type: {
-            type: String, 
-            enum: ['Point'], 
-            required: true,
+        streetNumber: {
+            type: String,
+            required: true
         },
-        coordinates: {
-            type: [Number],
-            required: true,
+        streetName: {
+            type: String,
+            required: true
         },
+        city: {
+            type: String,
+            required: true
+        },
+        state: {
+            type: String,
+            required: true
+        },
+        postalCode: {
+            type: String,
+            required: true
+        },
+        country: {
+            type: String,
+            required: true
+        }
     },
     roomDiscription: {
-      noofPeople: {     
-        type: Number,
+        noofPeople: {     
+            type: Number,
+            required: true,
+        },
+        noOfRooms: {  // Number of beds/rooms
+            type: Number,
+            required: true,
+        },
+        noOfBathrooms: {  // Number of bathrooms
+            type: Number,
+            required: true,
+        },
+        fullyFurnished: {
+            type: Boolean,
+            required: true,
+        },
+    },
+    dimensions: {  // Store length and breadth
+        length: {
+            type: Number,
+            required: true,
+        },
+        breadth: {
+            type: Number,
+            required: true,
+        }
+    },
+    area: {  // Calculated area in square feet
+        type: Number
+    },
+    keyFeatures: {  // Array of key features
+        type: [String],
         required: true,
-      },
-      noOfRooms: {
-        type: Number,
-        required: true,
-      },
-      noOfBathrooms: {
-        type: Number,
-        required: true,
-      },
-      fullyFurnished: {
-        type: Boolean,
-        required: true,
-      },
     },
     jobPoster: {
-      createdBy: {
-        type: mongoose.Types.ObjectId,
-        ref: 'User',
-      },
-      name: {
-        type: String,
-        required: true,
-      },
+        createdBy: {
+            type: mongoose.Types.ObjectId,
+            ref: 'User',
+        },
+        name: {
+            type: String,
+            required: true,
+        },
     },
     price: {
-      type: Number,
-      required: true,
+        type: Number,
+        required: true,
     },
     image: {
-      type: String,
-      required: true,
+        type: String,
+        required: true,
     },
-    views: { // New field to track the number of views
-      type: Number,
-      default: 0,
+    views: { // Number of views
+        type: Number,
+        default: 0,
     },
     userVerified: {
-      type: Boolean,
-      default: false,
+        type: Boolean,
+        default: false,
     },
     createdAt: {
-      type: Date,
-      default: Date.now,
+        type: Date,
+        default: Date.now,
     }
 }, 
 { timestamps: true }
 );
 
-postSchema.index({ location: '2dsphere' });
+// Before saving, calculate the area
+postSchema.pre('save', function (next) {
+    if (this.dimensions && this.dimensions.length && this.dimensions.breadth) {
+        this.area = this.dimensions.length * this.dimensions.breadth;
+    }
+    next();
+});
 
 module.exports = mongoose.model('Post', postSchema);

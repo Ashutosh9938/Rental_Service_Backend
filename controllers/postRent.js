@@ -6,6 +6,7 @@ const cloudinary = require('cloudinary').v2;
 const { BadRequestError, UnauthenticatedError } = require('../errors');
 
 // Function to post a new rent
+// Function to post a new rent
 const postRent = async (req, res, next) => {
     const userId = req.user.userId;
     const user = await User.findById(userId);
@@ -35,23 +36,31 @@ const postRent = async (req, res, next) => {
             stream.end(media.data);
         });
 
-        const { title, body, location, price, roomDiscription } = req.body;
+        const { title, body, location, price, roomDiscription, length, breadth, keyFeatures } = req.body;
 
-        // Check if fields are undefined
-        if (!title || !body || !location || !price || !roomDiscription) {
+        // Validate required fields
+        if (!title || !body || !location || !price || !roomDiscription || !length || !breadth || !keyFeatures) {
             throw new BadRequestError('Please provide all fields');
         }
 
-        // Parse location and roomDiscription
+        // Parse location, roomDiscription, and keyFeatures
         const locationParsed = JSON.parse(location);
         const roomDiscriptionParsed = JSON.parse(roomDiscription);
+        const keyFeaturesParsed = JSON.parse(keyFeatures);
+
+        // Calculate the area using the formula: area = length * breadth
+        const area = length * breadth;
   
         const postData = {
             title,
             body,
             location: {
-                type: 'Point',
-                coordinates: [locationParsed.coordinatesX, locationParsed.coordinatesY],
+                streetNumber: locationParsed.streetNumber,
+                streetName: locationParsed.streetName,
+                city: locationParsed.city,
+                state: locationParsed.state,
+                postalCode: locationParsed.postalCode,
+                country: locationParsed.country
             },
             price,
             roomDiscription: {
@@ -60,6 +69,8 @@ const postRent = async (req, res, next) => {
                 noOfBathrooms: roomDiscriptionParsed.noOfBathrooms,
                 fullyFurnished: roomDiscriptionParsed.fullyFurnished,
             },
+            dimensions: { length, breadth, area },  // Store length, breadth, and calculated area
+            keyFeatures: keyFeaturesParsed, // Store key features
             image: uploadResult.secure_url,
             jobPoster: {
                 createdBy: userId,
@@ -73,6 +84,7 @@ const postRent = async (req, res, next) => {
         next(error);
     }
 };
+
 
 // Function to update a post
 const updatePost = async (req, res, next) => {
@@ -88,7 +100,7 @@ const updatePost = async (req, res, next) => {
             throw new UnauthenticatedError('You are not authorized to update this post');
         }
 
-        const { title, body, location, price, roomDescription } = req.body;
+        const { title, body, location, price, roomDescription, area, keyFeatures } = req.body;
 
         const media = req.files?.media;
         let uploadResult;
@@ -114,8 +126,12 @@ const updatePost = async (req, res, next) => {
         if (location) {
             const locationParsed = JSON.parse(location);
             post.location = {
-                type: 'Point',
-                coordinates: [locationParsed.coordinatesX, locationParsed.coordinatesY],
+                streetNumber: locationParsed.streetNumber,
+                streetName: locationParsed.streetName,
+                city: locationParsed.city,
+                state: locationParsed.state,
+                postalCode: locationParsed.postalCode,
+                country: locationParsed.country
             };
         }
         if (price) post.price = price;
@@ -128,6 +144,8 @@ const updatePost = async (req, res, next) => {
                 fullyFurnished: roomDescParsed.fullyFurnished,
             };
         }
+        if (area) post.area = area; // Update the area field
+        if (keyFeatures) post.keyFeatures = JSON.parse(keyFeatures); // Update key features
 
         await post.save();
 
@@ -162,20 +180,26 @@ const deletePost = async (req, res, next) => {
 // Function to get all posts
 const getAllPosts = async (req, res, next) => {
     try {
-      const { page = 1, limit = 10 } = req.query;
-      const pageNumber = parseInt(page, 10);
-      const limitNumber = parseInt(limit, 10);
-      const totalPosts = await Post.countDocuments();
-      const posts = await Post.find({})
-        .skip((pageNumber - 1) * limitNumber)
-        .limit(limitNumber);
-      res.status(StatusCodes.OK).json({
-        posts,
-        totalPosts,      
-        postsPerPage: limitNumber, 
-      });
+        const { page = 1, limit = 10 } = req.query;
+        const pageNumber = parseInt(page, 10);
+        const limitNumber = parseInt(limit, 10);
+
+        // Get total count of posts
+        const totalPosts = await Post.countDocuments();
+
+        // Fetch posts with pagination, sorted by createdAt in descending order
+        const posts = await Post.find({})
+            .sort({ createdAt: -1 }) // Sort by createdAt, -1 for descending order
+            .skip((pageNumber - 1) * limitNumber)
+            .limit(limitNumber);
+
+        res.status(StatusCodes.OK).json({
+            posts,
+            totalPosts,
+            postsPerPage: limitNumber,
+        });
     } catch (error) {
-      next(error);
+        next(error);
     }
 };
 
@@ -220,6 +244,5 @@ const getFeaturedHouse = async (req, res, next) => {
         next(error);
     }
 };
-
 
 module.exports = { postRent, updatePost, deletePost, getAllPosts, getPost, getFeaturedHouse };
