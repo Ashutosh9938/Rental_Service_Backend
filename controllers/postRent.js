@@ -10,7 +10,7 @@ const { BadRequestError, UnauthenticatedError } = require('../errors');
 const postRent = async (req, res, next) => {
     const userId = req.user.userId;
     const user = await User.findById(userId);
-
+   
     if (!user) {
         throw new UnauthenticatedError('Please authenticate first'); 
     }
