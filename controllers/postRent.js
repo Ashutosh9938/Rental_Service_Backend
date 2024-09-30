@@ -18,7 +18,7 @@ const postRent = async (req, res, next) => {
     const media = req.files?.media;     
 
     if (!media) {  
-        throw new BadRequestError('Please upload a file');
+        throw new BadRequestError('Please upload a file');    
     }
 
     try {
