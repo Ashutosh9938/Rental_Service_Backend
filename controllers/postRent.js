@@ -6,13 +6,17 @@ const cloudinary = require('cloudinary').v2;
 const { BadRequestError, UnauthenticatedError } = require('../errors');
 
 // Function to post a new rent
-// Function to post a new rent
 const postRent = async (req, res, next) => {
     const userId = req.user.userId;
     const user = await User.findById(userId);
-   
+
     if (!user) {
         throw new UnauthenticatedError('Please authenticate first'); 
+    }
+
+    // Check if the user's phoneNumber exists
+    if (!user.phoneNumber) {
+        throw new BadRequestError('User must have a phone number to post');
     }
 
     const media = req.files?.media;     
@@ -38,17 +42,14 @@ const postRent = async (req, res, next) => {
 
         const { title, body, location, price, roomDiscription, length, breadth, keyFeatures } = req.body;
 
-        // Validate required fields
         if (!title || !body || !location || !price || !roomDiscription || !length || !breadth || !keyFeatures) {
             throw new BadRequestError('Please provide all fields');
         }
 
-        // Parse location, roomDiscription, and keyFeatures
         const locationParsed = JSON.parse(location);
         const roomDiscriptionParsed = JSON.parse(roomDiscription);
         const keyFeaturesParsed = JSON.parse(keyFeatures);
 
-        // Calculate the area using the formula: area = length * breadth
         const area = length * breadth;
   
         const postData = {
@@ -69,12 +70,16 @@ const postRent = async (req, res, next) => {
                 noOfBathrooms: roomDiscriptionParsed.noOfBathrooms,
                 fullyFurnished: roomDiscriptionParsed.fullyFurnished,
             },
-            dimensions: { length, breadth, area },  // Store length, breadth, and calculated area
-            keyFeatures: keyFeaturesParsed, // Store key features
+            dimensions: { length, breadth, area },
+            keyFeatures: keyFeaturesParsed,
             image: uploadResult.secure_url,
             jobPoster: {
                 createdBy: userId,
                 name: user.name,
+                email: user.email,
+                phoneNumber: user.phoneNumber, // Ensure phone number is included
+                profilePicture: user.profilePicture,
+                isVerified: user.isVerified
             }
         };
 
@@ -84,7 +89,6 @@ const postRent = async (req, res, next) => {
         next(error);
     }
 };
-
 
 // Function to update a post
 const updatePost = async (req, res, next) => {
@@ -144,8 +148,8 @@ const updatePost = async (req, res, next) => {
                 fullyFurnished: roomDescParsed.fullyFurnished,
             };
         }
-        if (area) post.area = area; // Update the area field
-        if (keyFeatures) post.keyFeatures = JSON.parse(keyFeatures); // Update key features
+        if (area) post.area = area;
+        if (keyFeatures) post.keyFeatures = JSON.parse(keyFeatures);
 
         await post.save();
 
@@ -184,12 +188,10 @@ const getAllPosts = async (req, res, next) => {
         const pageNumber = parseInt(page, 10);
         const limitNumber = parseInt(limit, 10);
 
-        // Get total count of posts
         const totalPosts = await Post.countDocuments();
 
-        // Fetch posts with pagination, sorted by createdAt in descending order
         const posts = await Post.find({})
-            .sort({ createdAt: -1 }) // Sort by createdAt, -1 for descending order
+            .sort({ createdAt: -1 })
             .skip((pageNumber - 1) * limitNumber)
             .limit(limitNumber);
 
@@ -207,13 +209,16 @@ const getAllPosts = async (req, res, next) => {
 const getPost = async (req, res, next) => {
     try {
         const { id } = req.params;
-        const post = await Post.findById(id);
+
+        const post = await Post.findById(id).populate({
+            path: 'jobPoster.createdBy',
+            select: 'name email profilePicture phoneNumber',
+        });
 
         if (!post) {
             throw new BadRequestError('Post not found');
         }
 
-        // Increment the views count
         post.views += 1;
         await post.save();
 
@@ -223,13 +228,11 @@ const getPost = async (req, res, next) => {
     }
 };
 
-// Function to get the top 4 featured houses (most viewed houses)
+// Function to get the top 4 featured houses
 const getFeaturedHouse = async (req, res, next) => {
     try {
-        // Get the total count of posts
         const totalPostsCount = await Post.countDocuments();
 
-        // Find the top 4 posts with the most views
         const featuredPosts = await Post.find().sort({ views: -1 }).limit(3).exec();
 
         if (!featuredPosts || featuredPosts.length === 0) {
@@ -237,7 +240,7 @@ const getFeaturedHouse = async (req, res, next) => {
         }
 
         res.status(StatusCodes.OK).json({ 
-            totalPosts: totalPostsCount,  // Return the total count of posts
+            totalPosts: totalPostsCount,
             featuredPosts 
         });
     } catch (error) {

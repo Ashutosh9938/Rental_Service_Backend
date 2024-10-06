@@ -10,4 +10,5 @@ router.route('/:id').get(getPost);
 router.patch('/:id', authenticateUser, updatePost);
 router.delete('/:id', authenticateUser, deletePost);
 
+
 module.exports = router;

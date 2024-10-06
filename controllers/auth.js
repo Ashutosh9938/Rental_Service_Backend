@@ -239,29 +239,54 @@ const resetPassword = async (req, res) => {
   res.send('reset password');
 };
 
-const updateUser = async (req, res) => {
-  const { email, name, lastName, location, lookingFor } = req.body;
 
-  if (!email || !name || !lastName || !location || !lookingFor) {
-    throw new CustomError.BadRequestError('Please provide all values');
+
+const updateUser = async (req, res) => {
+  const { 
+    email, 
+    name, 
+    lastName, 
+    location, 
+    lookingFor, 
+    nationality, 
+    phoneNumber, 
+    profilePicture 
+  } = req.body;
+console.log(req.body);
+  // Find the user by ID
+  const user = await User.findOne({ _id: req.user.userId });
+
+  if (!user) {
+    throw new CustomError.NotFoundError('User not found');
   }
 
-  if (!['RoomPatner', 'appartment', 'both'].includes(lookingFor)) {
+  // Only update fields that are provided, otherwise keep the current value
+  user.email = email || user.email;
+  user.name = name || user.name;
+  user.lastName = lastName || user.lastName;
+  user.location = location || user.location;
+  user.lookingFor = lookingFor || user.lookingFor;
+  user.nationality = nationality || user.nationality;
+  user.phoneNumber = phoneNumber || user.phoneNumber;
+  user.profilePicture = profilePicture || user.profilePicture;
+
+  // Validate the 'lookingFor' field based on enum values if it's provided
+  if (lookingFor && !['RoomPatner', 'appartment', 'both'].includes(lookingFor)) {
     throw new CustomError.BadRequestError('Please provide a valid lookingFor value');
   }
 
-  const user = await User.findOne({ _id: req.user.userId });
+  // Validate phone number length if it's provided
+  if (phoneNumber && (phoneNumber.length < 10 || phoneNumber.length > 15)) {
+    throw new CustomError.BadRequestError('Phone number must be between 10 and 15 characters long');
+  }
 
-  user.email = email;
-  user.name = name;
-  user.lastName = lastName;
-  user.location = location;
-  user.lookingFor = lookingFor;
-
+  // Save the updated user
   await user.save();
-  
+
+  // Generate a new JWT token
   const token = user.createJWT();
 
+  // Send response with updated user information and new token
   res.status(StatusCodes.OK).json({
     user: {
       email: user.email,
@@ -269,10 +294,14 @@ const updateUser = async (req, res) => {
       location: user.location,
       name: user.name,
       lookingFor: user.lookingFor,
+      nationality: user.nationality,
+      phoneNumber: user.phoneNumber,
+      profilePicture: user.profilePicture,
       token,
     },
   });
 };
+
 
 const googleLogin = async (req, res) => {
   try {

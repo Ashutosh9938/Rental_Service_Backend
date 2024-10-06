@@ -78,7 +78,27 @@ const postSchema = new mongoose.Schema({
         name: {
             type: String,
             required: true,
+            ref: 'User',
         },
+        profilePicture:{
+            type: String,
+            ref: 'User',
+        },
+        email:{
+            type: String,
+            required: true,
+            ref: 'User',
+        },
+        phoneNumber:{
+            type: String,
+            required: true,
+            ref: 'User',
+        },
+        isVerified: {
+            type: Boolean,
+            default: false,
+            ref: 'User',
+        }
     },
     price: {
         type: Number,

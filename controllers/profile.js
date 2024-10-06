@@ -1,5 +1,5 @@
 const User = require('../models/User');
-
+const Post = require('../models/post');
 const getUserById = async (req, res) => {
 
   const userId = req.user.userId;
@@ -23,4 +23,19 @@ const getAllUsers = async (req, res) => {
       res.status(500).json({ msg: error.message });
     }
   }
-  module.exports = {getUserById, getAllUsers};
+  const getUserPosts = async (req, res, next) => {
+    try {
+      const { userId } = req.params; // Get the userId from the URL
+      const posts = await Post.find({ 'jobPoster.createdBy': userId }); // Find posts where jobPoster createdBy matches the userId
+  
+      if (!posts || posts.length === 0) {
+        return res.status(404).json({ message: 'No posts found for this user' });
+      }
+  
+      res.status(200).json({ posts });
+    } catch (error) {
+      next(error); // Handle error
+    }
+  };
+
+  module.exports = {getUserById, getAllUsers,getUserPosts };
