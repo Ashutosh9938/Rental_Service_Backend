@@ -58,7 +58,7 @@ const KYCSchema = new mongoose.Schema({
     },
     lastName: {
         type: String,
-        required: true,
+        required: true, 
         minlength: [2, 'Last name must be at least 2 characters long.'],
     },
     gender: {
