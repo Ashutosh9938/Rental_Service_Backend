@@ -68,7 +68,7 @@ const KYCSchema = new mongoose.Schema({
     },
     dob: {
         type: Date,
-        required: true,
+        required: true, 
         validate: {
             validator: function (value) {
                 return value <= new Date();
